@@ -1,65 +1,84 @@
-import Image from "next/image";
+import Link from 'next/link';
+import prisma from '@/lib/prisma';
 
-export default function Home() {
+export default async function HomePage() {
+  // 1. Fetch auctions from SQL Server
+  const auctions = await prisma.auction.findMany({
+    orderBy: { endTime: 'asc' },
+  });
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="max-w-7xl mx-auto px-4 py-10">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+            Live Auctions
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-500 mt-1">
+            Real-time bidding powered by SQL Server & Pusher.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="bg-blue-50 border border-blue-100 px-4 py-2 rounded-2xl flex items-center">
+          <span className="relative flex h-3 w-3 mr-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          </span>
+          <span className="text-blue-800 font-bold text-sm">
+            {auctions.length} Items Live
+          </span>
         </div>
-      </main>
+      </div>
+
+      {/* Auction Grid */}
+      {auctions.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {auctions.map((auction) => (
+            <div
+              key={auction.id}
+              className="bg-white border border-gray-200 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
+            >
+              <div className="p-6 flex-grow">
+                <h2 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                  {auction.title}
+                </h2>
+                <p className="text-gray-500 text-sm mt-2 line-clamp-2">
+                  {auction.description}
+                </p>
+
+                <div className="mt-6 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest">
+                    Current High Bid
+                  </span>
+                  <div className="text-3xl font-black text-gray-900">
+                    ${Number(auction.currentBid).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 pt-0">
+                <Link
+                  href={`/auction/${auction.id}`}
+                  className="block w-full text-center bg-gray-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Join & Bid
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="text-center py-24 bg-white border-2 border-dashed border-gray-200 rounded-3xl">
+          <div className="text-5xl mb-4">📦</div>
+          <h3 className="text-xl font-bold text-gray-800">No Auctions Yet</h3>
+          <p className="text-gray-500 mt-2">Check back later or launch an item as admin.</p>
+          <Link href="/admin/create" className="text-blue-600 font-bold mt-4 inline-block hover:underline">
+            Go to Admin Panel →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,27 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model Auction {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String
+  startPrice   Decimal  @db.Decimal(18, 2)
+  currentBid   Decimal  @db.Decimal(18, 2)
+  endTime      DateTime
+  bids         Bid[]
+}
+
+model Bid {
+  id          Int      @id @default(autoincrement())
+  amount      Decimal  @db.Decimal(18, 2)
+  bidderName  String
+  createdAt   DateTime @default(now())
+  auctionId   Int
+  auction     Auction  @relation(fields: [auctionId], references: [id])
+}
